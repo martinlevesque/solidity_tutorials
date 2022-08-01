@@ -1,27 +1,27 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.0;
+
+// Ownable allows to check that the owner only can use certain functions (with onlyOwner keyword)
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
 
 // SPDX-License-Identifier: UNLICENSED
 
-contract SharedWallet {
+contract SharedWallet is Ownable {
 
-    address public owner;
     uint public balanceReceived;
 
-    constructor() public {
-        owner = msg.sender;
-    }
-
-    function withdrawMoney(address payable _to, uint _amount) public {
+    function withdrawMoney(address payable _to, uint _amount) public onlyOwner {
         _to.transfer(_amount);
     }
 
     fallback() external payable
     {
-        balanceReceived += msg.value;
+        //balanceReceived += msg.value;
     }
 
+    // function for receiving an amount passed in the message value
     event Received(address, uint);
     receive() external payable {
+        balanceReceived += msg.value;
         emit Received(msg.sender, msg.value);
     }
 
