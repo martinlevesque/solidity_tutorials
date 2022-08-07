@@ -1,29 +1,17 @@
+
 pragma solidity ^0.8.0;
 
-// Ownable allows to check that the owner only can use certain functions (with onlyOwner keyword)
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
+import "./Allowance.sol";
 
 // SPDX-License-Identifier: UNLICENSED
 
-contract SharedWallet is Ownable {
+contract SharedWallet is Allowance {
 
-    mapping(address => uint) public allowance;
+    event MoneySent(address indexed _beneficiary, uint _amount);
+    event MoneyReceived(address indexed _from, uint _amount);
 
     function isOwner() public view returns(bool) {
         return owner() == msg.sender;
-    }
-
-    function addAllowance(address _who, uint _amount) public onlyOwner {
-        allowance[_who] = _amount;
-    }
-
-    function reduceAllowance(address _who, uint _amount) internal {
-        allowance[_who] -= _amount;
-    }
-
-    modifier ownerOrAllowed(uint _amount) {
-        require(owner() == msg.sender || allowance[msg.sender] >= _amount, "You are not allowed");
-        _;
     }
 
     function withdrawMoney(address payable _to, uint _amount) public ownerOrAllowed(_amount) {
@@ -34,13 +22,17 @@ contract SharedWallet is Ownable {
             reduceAllowance(msg.sender, _amount);
         }
 
+        emit MoneySent(_to, _amount);
+
         _to.transfer(_amount);
     }
 
-    // function for receiving an amount passed in the message value
-    event Received(address, uint);
+    function renounceOwnership() public override onlyOwner view {
+        revert("Can't renounce ownership");
+    }
+
     receive() external payable {
-        emit Received(msg.sender, msg.value);
+        emit MoneyReceived(msg.sender, msg.value);
     }
 
 }
